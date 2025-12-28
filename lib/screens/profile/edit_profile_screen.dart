@@ -57,6 +57,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (image != null) {
+        // Validate file type
+        final String extension = image.path.split('.').last.toLowerCase();
+        final List<String> allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        
+        if (!allowedExtensions.contains(extension)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Only image files are allowed (JPG, JPEG, PNG, WEBP)',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+
         setState(() {
           _profileImage = File(image.path);
         });
@@ -84,6 +101,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (image != null) {
+        // Validate file type
+        final String extension = image.path.split('.').last.toLowerCase();
+        final List<String> allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        
+        if (!allowedExtensions.contains(extension)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Only image files are allowed (JPG, JPEG, PNG, WEBP)',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+
         setState(() {
           _profileImage = File(image.path);
         });

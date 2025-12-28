@@ -153,15 +153,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           children: [
                             _buildHeaderIcon(Icons.notifications_outlined, () {
                               HapticFeedback.selectionClick();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Notifications coming soon!'),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              );
+                              Navigator.pushNamed(context, '/notifications');
                             }),
                             const SizedBox(width: 12),
                             GestureDetector(

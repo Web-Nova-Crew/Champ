@@ -23,6 +23,12 @@ class _MyPropertiesScreenState extends State<MyPropertiesScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    // Reload properties when screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+      propertyProvider.loadProperties();
+      propertyProvider.loadUserProperties();
+    });
   }
 
   @override

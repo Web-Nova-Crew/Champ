@@ -39,6 +39,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   bool _isFurnished = false;
   final List<String> _selectedAmenities = [];
   final List<String> _imageUrls = [];
+  bool _isSubmitting = false;
 
   final List<String> _propertyTypes = [
     'Apartment',
@@ -169,20 +170,31 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
         listedDate: DateTime.now(),
       );
 
+      // Show loading state
+      setState(() {
+        _isSubmitting = true;
+      });
+
       // Create property via API
       final success = await Provider.of<PropertyProvider>(context, listen: false).addProperty(property);
+
+      setState(() {
+        _isSubmitting = false;
+      });
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Property listed successfully!',
+              'Property listed successfully! Pending admin approval.',
               style: GoogleFonts.poppins(),
             ),
             backgroundColor: AppColors.success,
           ),
         );
-        Navigator.pop(context);
+        
+        // Navigate to My Properties screen to show pending properties
+        Navigator.pushReplacementNamed(context, '/my-properties');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -602,14 +614,45 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
             SizedBox(
               height: 56,
               child: ElevatedButton(
-                onPressed: _handleSubmit,
-                child: Text(
-                  'List Property',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                onPressed: _isSubmitting ? null : _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[400],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
+                child: _isSubmitting
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Listing Property...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        'List Property',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 20),

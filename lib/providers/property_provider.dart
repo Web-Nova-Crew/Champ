@@ -389,7 +389,10 @@ class PropertyProvider with ChangeNotifier {
     try {
       final response = await ApiClient.createProperty(property.toJson());
       if (response['success'] == true) {
+        // Reload all properties to include the new one
         await loadProperties();
+        // Also reload user properties to update pending list
+        await loadUserProperties();
         return true;
       }
       _errorMessage = response['error'] ?? 'Failed to add property';

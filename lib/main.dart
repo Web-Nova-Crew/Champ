@@ -41,6 +41,8 @@ import 'providers/settings_provider.dart';
 import 'screens/settings/account_settings_screen_new.dart';
 import 'screens/settings/privacy_settings_screen_new.dart';
 import 'screens/profile/search_history_screen_new.dart';
+import 'screens/notifications/notifications_screen.dart';
+import 'screens/profile/my_properties_screen.dart';
 import 'models/property.dart';
 
 void main() async {
@@ -183,6 +185,12 @@ class MyApp extends StatelessWidget {
         break;
       case '/ai-chat':
         page = const AIChatScreen();
+        break;
+      case '/notifications':
+        page = const NotificationsScreen();
+        break;
+      case '/my-properties':
+        page = const MyPropertiesScreen();
         break;
       case '/account-settings':
         page = const AccountSettingsScreen();
