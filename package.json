@@ -2,11 +2,11 @@
   "name": "estato",
   "version": "1.0.0",
   "description": "Estato Real Estate App",
-  "main": "server.js",
+  "main": "backend/backend/server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "cd backend && npm install",
-    "postinstall": "cd backend && npm install"
+    "start": "node backend/backend/server.js",
+    "build": "cd backend/backend && npm install",
+    "postinstall": "cd backend/backend && npm install"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
