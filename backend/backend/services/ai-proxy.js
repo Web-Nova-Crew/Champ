@@ -3,39 +3,94 @@ const axios = require('axios');
 /**
  * AI Proxy Service with 30+ Free Models
  * Implements smart rotation, fallback, and rate limit handling
+ * 
+ * SECURITY: API keys are loaded ONLY from environment variables
+ * Set these in Render Dashboard → Environment Variables:
+ * - OPENROUTER_API_KEY (single key) or
+ * - OPENROUTER_API_KEY_1, OPENROUTER_API_KEY_2, etc. (multiple keys for rotation)
  */
 
-// Multiple OpenRouter API Keys for rotation
-const API_KEYS = [
-  process.env.OPENROUTER_API_KEY_1 || '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',
-  process.env.OPENROUTER_API_KEY_2 || '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',
-  process.env.OPENROUTER_API_KEY_3 || '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',
-  process.env.OPENROUTER_API_KEY_4 || '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',
-  process.env.OPENROUTER_API_KEY_5 || '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',
-  process.env.OPENROUTER_API_KEY_6 || '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',
-  process.env.OPENROUTER_API_KEY_7 || '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',
-  process.env.OPENROUTER_API_KEY_8 || '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',
-  process.env.OPENROUTER_API_KEY_9 || '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',
-  process.env.OPENROUTER_API_KEY_10 || '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',
-  process.env.OPENROUTER_API_KEY_11 || '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',
-  process.env.OPENROUTER_API_KEY_12 || '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',
-  process.env.OPENROUTER_API_KEY_13 || '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',
-  process.env.OPENROUTER_API_KEY_14 || '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',
-  process.env.OPENROUTER_API_KEY_15 || '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',
-  process.env.OPENROUTER_API_KEY || '', // Fallback to single key
-].filter(key => key && key.length > 0); // Remove empty keys
+// Load API keys from environment variables ONLY (no hardcoded keys!)
+function loadApiKeys() {
+  const keys = [];
+  
+  // Try numbered keys first (for rotation)
+  for (let i = 1; i <= 20; i++) {
+    const key = process.env[`OPENROUTER_API_KEY_${i}`];
+    if (key && key.trim().length > 0 && key.startsWith('sk-or-')) {
+      keys.push(key.trim());
+    }
+  }
+  
+  // Fallback to single key
+  const singleKey = process.env.OPENROUTER_API_KEY;
+  if (singleKey && singleKey.trim().length > 0 && singleKey.startsWith('sk-or-') && !keys.includes(singleKey.trim())) {
+    keys.push(singleKey.trim());
+  }
+  
+  return keys;
+}
 
+// Initialize API keys from environment
+let API_KEYS = loadApiKeys();
 let currentKeyIndex = 0;
+let keyFailures = new Map(); // Track failures per key
 
-// Function to get next API key
+// Function to reload API keys (useful if env vars change)
+function reloadApiKeys() {
+  API_KEYS = loadApiKeys();
+  currentKeyIndex = 0;
+  keyFailures.clear();
+  console.log(`🔑 Loaded ${API_KEYS.length} OpenRouter API key(s)`);
+}
+
+// Function to get next working API key with smart rotation
 function getNextApiKey() {
   if (API_KEYS.length === 0) {
-    console.warn('⚠️  No OpenRouter API keys configured!');
+    console.warn('⚠️  No OpenRouter API keys configured! Set OPENROUTER_API_KEY in environment.');
     return '';
   }
-  const key = API_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-  return key;
+  
+  // Find a key with fewer failures
+  let attempts = 0;
+  while (attempts < API_KEYS.length) {
+    const key = API_KEYS[currentKeyIndex];
+    const failures = keyFailures.get(key) || 0;
+    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+    
+    // Skip keys with too many recent failures
+    if (failures < 3) {
+      return key;
+    }
+    attempts++;
+  }
+  
+  // All keys have failures, reset and try first one
+  keyFailures.clear();
+  return API_KEYS[0];
+}
+
+// Mark a key as failed
+function markKeyFailed(key) {
+  const failures = keyFailures.get(key) || 0;
+  keyFailures.set(key, failures + 1);
+  
+  // Auto-reset after 5 minutes
+  setTimeout(() => {
+    keyFailures.set(key, Math.max(0, (keyFailures.get(key) || 0) - 1));
+  }, 5 * 60 * 1000);
+}
+
+// Mark a key as successful
+function markKeySuccess(key) {
+  keyFailures.set(key, 0);
+}
+
+// Log key status on startup
+console.log(`🔑 OpenRouter API: ${API_KEYS.length} key(s) loaded from environment`);
+if (API_KEYS.length === 0) {
+  console.warn('⚠️  WARNING: No API keys found! AI chat will use fallback responses.');
+  console.warn('   Set OPENROUTER_API_KEY or OPENROUTER_API_KEY_1 in Render environment variables.');
 }
 
 // 40+ Free AI Models from OpenRouter (Tier-based priority)
@@ -237,12 +292,30 @@ async function sendChatMessage(messages, systemPrompt, options = {}) {
     ...messages,
   ];
   
+  // Check if we have any API keys
+  if (API_KEYS.length === 0) {
+    console.warn('⚠️  No API keys configured, using fallback AI');
+    return {
+      success: true,
+      message: generateFallbackResponse(messages, systemPrompt),
+      model: 'fallback-ai',
+      cached: false,
+      fallback: true,
+    };
+  }
+  
   // Try multiple models with rotation
   let lastError = null;
   const maxAttempts = Math.min(10, ALL_MODELS.length); // Try up to 10 models
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const model = getNextModel();
+    const apiKey = getNextApiKey();
+    
+    if (!apiKey) {
+      console.warn('⚠️  No valid API key available');
+      continue;
+    }
     
     try {
       console.log(`🤖 Attempting AI request with model: ${model} (Attempt ${attempt + 1}/${maxAttempts})`);
@@ -258,7 +331,7 @@ async function sendChatMessage(messages, systemPrompt, options = {}) {
         },
         {
           headers: {
-            'Authorization': `Bearer ${getNextApiKey()}`,
+            'Authorization': `Bearer ${apiKey}`,
             'HTTP-Referer': process.env.APP_URL || 'https://estatoprop.com',
             'X-Title': 'Estato Property Assistant',
             'Content-Type': 'application/json',
@@ -269,8 +342,9 @@ async function sendChatMessage(messages, systemPrompt, options = {}) {
       
       const assistantMessage = response.data.choices[0].message.content;
       
-      // Mark model as successful
+      // Mark model and key as successful
       markModelSuccess(model);
+      markKeySuccess(apiKey);
       
       // Cache the response
       if (useCache) {
@@ -293,20 +367,30 @@ async function sendChatMessage(messages, systemPrompt, options = {}) {
       
     } catch (error) {
       lastError = error;
+      const status = error.response?.status;
+      const errorMsg = error.response?.data?.error?.message || error.message;
+      
+      // Handle API key errors (401 = unauthorized/disabled key)
+      if (status === 401) {
+        console.log(`⚠️  API key unauthorized (disabled?), trying next key...`);
+        markKeyFailed(apiKey);
+        continue; // Try next key
+      }
       
       // Check if it's a rate limit or unavailable error
       if (isRateLimitOrUnavailable(error)) {
         console.log(`⚠️ Model ${model} rate limited or unavailable, trying next model...`);
         markModelFailed(model);
+        markKeyFailed(apiKey);
         continue; // Try next model
       }
       
       // For other errors, log and try next model
-      console.error(`❌ Error with model ${model}:`, error.response?.data?.error?.message || error.message);
+      console.error(`❌ Error with model ${model}:`, errorMsg);
       markModelFailed(model);
       
-      // If it's a 4xx error (except rate limit), don't retry
-      if (error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429) {
+      // If it's a 4xx error (except rate limit and auth), don't retry
+      if (status >= 400 && status < 500 && status !== 429 && status !== 401) {
         break;
       }
     }
