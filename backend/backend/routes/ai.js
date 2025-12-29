@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { sendChatMessage, getModelsInfo, clearCache, resetFailures } = require('../services/ai-proxy');
 const { aiUserRateLimit, aiIpRateLimit, getRateLimitStatus } = require('../middleware/ai-rate-limit');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 /**
  * AI Chat Routes
@@ -22,7 +22,7 @@ router.use(aiIpRateLimit);
  * - systemPrompt: string (optional) - Custom system prompt
  * - options: object (optional) - AI generation options
  */
-router.post('/chat', authenticateToken, aiUserRateLimit, async (req, res) => {
+router.post('/chat', authenticate, aiUserRateLimit, async (req, res) => {
   try {
     const { message, conversationHistory = [], systemPrompt, options = {} } = req.body;
     
@@ -99,7 +99,7 @@ Keep responses under 300 words.`;
  * POST /api/ai/property-suggestions
  * Get AI property suggestions based on criteria
  */
-router.post('/property-suggestions', authenticateToken, aiUserRateLimit, async (req, res) => {
+router.post('/property-suggestions', authenticate, aiUserRateLimit, async (req, res) => {
   try {
     const { budget, propertyType, purpose, preferredArea, bedrooms } = req.body;
     
@@ -159,7 +159,7 @@ Keep response under 200 words.`;
  * POST /api/ai/compare-areas
  * Compare two areas in Lucknow
  */
-router.post('/compare-areas', authenticateToken, aiUserRateLimit, async (req, res) => {
+router.post('/compare-areas', authenticate, aiUserRateLimit, async (req, res) => {
   try {
     const { area1, area2 } = req.body;
     
@@ -211,7 +211,7 @@ Keep response under 200 words.`;
  * POST /api/ai/price-guidance
  * Get price guidance for a property
  */
-router.post('/price-guidance', authenticateToken, aiUserRateLimit, async (req, res) => {
+router.post('/price-guidance', authenticate, aiUserRateLimit, async (req, res) => {
   try {
     const { propertyType, area, size } = req.body;
     
@@ -263,7 +263,7 @@ Keep response under 150 words.`;
  * GET /api/ai/rate-limit-status
  * Get current user's rate limit status
  */
-router.get('/rate-limit-status', authenticateToken, (req, res) => {
+router.get('/rate-limit-status', authenticate, (req, res) => {
   try {
     const userId = req.user?.id || req.ip;
     const status = getRateLimitStatus(userId);
@@ -306,7 +306,7 @@ router.get('/models-info', (req, res) => {
  * POST /api/ai/admin/clear-cache
  * Admin: Clear AI response cache
  */
-router.post('/admin/clear-cache', authenticateToken, (req, res) => {
+router.post('/admin/clear-cache', authenticate, (req, res) => {
   try {
     // Check if user is admin (you can add proper admin check here)
     if (!req.user?.isAdmin) {
@@ -335,7 +335,7 @@ router.post('/admin/clear-cache', authenticateToken, (req, res) => {
  * POST /api/ai/admin/reset-failures
  * Admin: Reset model failure tracking
  */
-router.post('/admin/reset-failures', authenticateToken, (req, res) => {
+router.post('/admin/reset-failures', authenticate, (req, res) => {
   try {
     // Check if user is admin
     if (!req.user?.isAdmin) {
