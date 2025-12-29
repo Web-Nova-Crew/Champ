@@ -3,7 +3,13 @@
  * Sends push notifications via Firebase Cloud Messaging (FCM)
  */
 
-const admin = require('firebase-admin');
+let admin;
+try {
+  admin = require('firebase-admin');
+} catch (error) {
+  admin = null;
+  console.warn("⚠️ firebase-admin not installed; notifications will run in simulation mode");
+}
 const { generateSmartNotification } = require('./notification-ai');
 const { logNotification } = require('./notification-rules');
 
@@ -12,6 +18,10 @@ let firebaseInitialized = false;
 
 function initializeFirebase() {
   if (firebaseInitialized) return;
+
+  if (!admin) {
+    return;
+  }
 
   try {
     // Check if Firebase is already initialized
@@ -77,7 +87,7 @@ async function sendNotificationToUser(userId, eventData, fcmToken) {
     };
 
     // Send via FCM
-    if (firebaseInitialized && fcmToken) {
+    if (firebaseInitialized && admin && fcmToken) {
       try {
         const message = {
           notification,
@@ -186,7 +196,7 @@ async function sendTopicNotification(topic, eventData) {
 
     const notificationText = aiResult.message;
 
-    if (firebaseInitialized) {
+    if (firebaseInitialized && admin) {
       const message = {
         notification: {
           title: 'Estato Property',
