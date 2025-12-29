@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { authenticate, requireAdmin } = require('../middleware/auth');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const { 
   sendNotificationToUser, 
   sendTestNotification,
@@ -12,14 +13,13 @@ const {
   checkInactiveUsers,
   getUserNotificationStats
 } = require('../services/notification-rules');
-const User = require('../models/User');
 
 /**
  * @route   POST /api/notifications/test
  * @desc    Send test notification
  * @access  Private
  */
-router.post('/test', protect, async (req, res) => {
+router.post('/test', authenticate, async (req, res) => {
   try {
     const { fcmToken } = req.body;
     
@@ -28,6 +28,7 @@ router.post('/test', protect, async (req, res) => {
         success: false,
         message: 'FCM token is required'
       });
+
     }
 
     const result = await sendTestNotification(fcmToken);
@@ -52,16 +53,8 @@ router.post('/test', protect, async (req, res) => {
  * @desc    Send custom notification to user
  * @access  Private (Admin only)
  */
-router.post('/send', protect, async (req, res) => {
+router.post('/send', authenticate, requireAdmin, async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.userType !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin access required'
-      });
-    }
-
     const { userId, eventData } = req.body;
 
     if (!userId || !eventData) {
@@ -71,16 +64,23 @@ router.post('/send', protect, async (req, res) => {
       });
     }
 
-    // Get user's FCM token
-    const user = await User.findById(userId);
-    if (!user) {
+    const dbClient = supabaseAdmin || supabase;
+    const { data: userProfile, error: userError } = await dbClient
+      .from('users')
+      .select('fcm_token, fcmToken')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !userProfile) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
-    const result = await sendNotificationToUser(userId, eventData, user.fcmToken);
+    const token = userProfile.fcm_token || userProfile.fcmToken || null;
+
+    const result = await sendNotificationToUser(userId, eventData, token);
 
     res.json({
       success: true,
@@ -102,9 +102,9 @@ router.post('/send', protect, async (req, res) => {
  * @desc    Get notification stats for current user
  * @access  Private
  */
-router.get('/stats', protect, async (req, res) => {
+router.get('/stats', authenticate, async (req, res) => {
   try {
-    const stats = getUserNotificationStats(req.user._id.toString());
+    const stats = getUserNotificationStats(req.userId.toString());
 
     res.json({
       success: true,
@@ -125,7 +125,7 @@ router.get('/stats', protect, async (req, res) => {
  * @desc    Update user's FCM token
  * @access  Private
  */
-router.post('/update-token', protect, async (req, res) => {
+router.post('/update-token', authenticate, async (req, res) => {
   try {
     const { fcmToken } = req.body;
 
@@ -136,10 +136,19 @@ router.post('/update-token', protect, async (req, res) => {
       });
     }
 
-    await User.findByIdAndUpdate(req.user._id, {
-      fcmToken,
-      notificationsEnabled: true
-    });
+    const dbClient = supabaseAdmin || supabase;
+    const { error } = await dbClient
+      .from('users')
+      .update({
+        fcm_token: fcmToken,
+        notifications_enabled: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', req.userId);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({
       success: true,
@@ -160,13 +169,22 @@ router.post('/update-token', protect, async (req, res) => {
  * @desc    Enable/disable notifications
  * @access  Private
  */
-router.post('/toggle', protect, async (req, res) => {
+router.post('/toggle', authenticate, async (req, res) => {
   try {
     const { enabled } = req.body;
 
-    await User.findByIdAndUpdate(req.user._id, {
-      notificationsEnabled: enabled
-    });
+    const dbClient = supabaseAdmin || supabase;
+    const { error } = await dbClient
+      .from('users')
+      .update({
+        notifications_enabled: enabled,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', req.userId);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({
       success: true,
@@ -187,16 +205,8 @@ router.post('/toggle', protect, async (req, res) => {
  * @desc    Send broadcast notification to topic
  * @access  Private (Admin only)
  */
-router.post('/broadcast', protect, async (req, res) => {
+router.post('/broadcast', authenticate, requireAdmin, async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.userType !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin access required'
-      });
-    }
-
     const { topic, eventData } = req.body;
 
     if (!topic || !eventData) {

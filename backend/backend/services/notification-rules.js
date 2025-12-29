@@ -3,8 +3,18 @@
  * Controls WHEN and WHO gets notifications (AI only writes the text)
  */
 
-const User = require('../models/User');
-const Property = require('../models/Property');
+let User;
+let Property;
+try {
+  User = require('../models/User');
+} catch (error) {
+  User = null;
+}
+try {
+  Property = require('../models/Property');
+} catch (error) {
+  Property = null;
+}
 
 // Notification settings
 const NOTIFICATION_CONFIG = {
@@ -74,6 +84,10 @@ function logNotification(userId) {
  */
 async function checkNewPropertyMatch(property) {
   try {
+    if (!User) {
+      console.warn('⚠️ User model not available; skipping notification rule: checkNewPropertyMatch');
+      return [];
+    }
     const matchingUsers = await User.find({
       'preferences.areas': property.area,
       'preferences.minBudget': { $lte: property.price },
@@ -115,6 +129,10 @@ async function checkNewPropertyMatch(property) {
  */
 async function checkPriceDropOnWishlist(property, oldPrice, newPrice) {
   try {
+    if (!User) {
+      console.warn('⚠️ User model not available; skipping notification rule: checkPriceDropOnWishlist');
+      return [];
+    }
     const usersWithWishlist = await User.find({
       'wishlist': property._id,
       notificationsEnabled: true
@@ -154,6 +172,10 @@ async function checkPriceDropOnWishlist(property, oldPrice, newPrice) {
  */
 async function checkInactiveUsers() {
   try {
+    if (!User) {
+      console.warn('⚠️ User model not available; skipping notification rule: checkInactiveUsers');
+      return [];
+    }
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
     const inactiveUsers = await User.find({
@@ -190,6 +212,10 @@ async function checkInactiveUsers() {
  */
 async function checkNewListingInPreferredArea(property) {
   try {
+    if (!User) {
+      console.warn('⚠️ User model not available; skipping notification rule: checkNewListingInPreferredArea');
+      return [];
+    }
     const matchingUsers = await User.find({
       'preferences.areas': property.area,
       notificationsEnabled: true
