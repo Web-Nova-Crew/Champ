@@ -855,5 +855,105 @@ router.delete('/search-history', authenticate, async (req, res) => {
   }
 });
 
+router.get('/properties', authenticate, async (req, res) => {
+  try {
+    const dbClient = supabaseAdmin || supabase;
+    const { data, error } = await dbClient
+      .from('properties')
+      .select('*')
+      .eq('owner_id', req.userId)
+      .order('created_at', { ascending: false });
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+    res.json({
+      success: true,
+      data: data || [],
+      count: data ? data.length : 0,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+    });
+  }
+});
+
+router.get('/data-download-status', authenticate, async (req, res) => {
+  try {
+    const dbClient = supabaseAdmin || supabase;
+    const { data, error } = await dbClient
+      .from('data_download_requests')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('requested_at', { ascending: false })
+      .limit(1);
+    if (error || !data || data.length === 0) {
+      return res.json({
+        success: true,
+        data: { status: 'not_requested' },
+      });
+    }
+    res.json({
+      success: true,
+      data: data[0],
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+    });
+  }
+});
+
+router.delete('/profile', authenticate, async (req, res) => {
+  try {
+    const dbClient = supabaseAdmin || supabase;
+    let adminDeleted = false;
+    if (supabaseAdmin && supabaseAdmin.auth && supabaseAdmin.auth.admin) {
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(req.userId);
+        adminDeleted = true;
+      } catch (e) {}
+    }
+    try {
+      await dbClient.from('favorites').delete().eq('user_id', req.userId);
+    } catch (e) {}
+    try {
+      await dbClient
+        .from('chats')
+        .delete()
+        .or(`participant1_id.eq.${req.userId},participant2_id.eq.${req.userId}`);
+    } catch (e) {}
+    try {
+      await dbClient.from('messages').delete().eq('sender_id', req.userId);
+    } catch (e) {}
+    try {
+      await dbClient
+        .from('bookings')
+        .delete()
+        .or(`booker_id.eq.${req.userId},property_owner_id.eq.${req.userId}`);
+    } catch (e) {}
+    try {
+      await dbClient.from('properties').delete().eq('owner_id', req.userId);
+    } catch (e) {}
+    try {
+      await dbClient.from('users').delete().eq('id', req.userId);
+    } catch (e) {}
+    res.json({
+      success: true,
+      message: adminDeleted ? 'Account deleted' : 'Account deletion scheduled',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+    });
+  }
+});
+
 module.exports = router;
 

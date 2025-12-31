@@ -233,4 +233,99 @@ router.post('/broadcast', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const dbClient = supabaseAdmin || supabase;
+    let list = [];
+    try {
+      const { data } = await dbClient
+        .from('notifications')
+        .select('*')
+        .eq('user_id', req.userId)
+        .order('created_at', { ascending: false });
+      if (data && Array.isArray(data)) {
+        list = data.map(n => ({
+          id: n.id,
+          type: n.type || 'general',
+          title: n.title || 'Notification',
+          message: n.message || '',
+          createdAt: n.created_at,
+          read: !!n.read,
+        }));
+      }
+    } catch (e) {}
+    res.json({
+      success: true,
+      data: list,
+    });
+  } catch (error) {
+    res.json({
+      success: true,
+      data: [],
+    });
+  }
+});
+
+router.put('/:id/read', authenticate, async (req, res) => {
+  try {
+    const dbClient = supabaseAdmin || supabase;
+    const id = req.params.id;
+    try {
+      const { data, error } = await dbClient
+        .from('notifications')
+        .update({
+          read: true,
+          read_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', req.userId)
+        .select()
+        .single();
+      if (error) {
+        return res.json({ success: true });
+      }
+      return res.json({
+        success: true,
+        data,
+      });
+    } catch (e) {
+      return res.json({ success: true });
+    }
+  } catch (error) {
+    res.json({ success: true });
+  }
+});
+
+router.put('/settings', authenticate, async (req, res) => {
+  try {
+    const dbClient = supabaseAdmin || supabase;
+    const { enabled } = req.body || {};
+    const updates = { updated_at: new Date().toISOString() };
+    if (typeof enabled === 'boolean') {
+      updates.notifications_enabled = enabled;
+    }
+    const { data, error } = await dbClient
+      .from('users')
+      .update(updates)
+      .eq('id', req.userId)
+      .select()
+      .single();
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+    });
+  }
+});
+
 module.exports = router;

@@ -57,9 +57,7 @@ class _MyPropertiesScreenState extends State<MyPropertiesScreen>
       );
     }
 
-    final myProperties = propertyProvider.properties
-        .where((p) => p.ownerId == user.id)
-        .toList();
+    final myProperties = propertyProvider.userProperties;
 
     final activeProperties = myProperties.where((p) => p.status == 'approved').toList();
     final pendingProperties = myProperties.where((p) => p.status == 'pending').toList();
