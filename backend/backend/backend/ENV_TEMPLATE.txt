@@ -1,0 +1,45 @@
+# Estato Backend Environment Variables
+# Copy these to your .env file or Render environment variables
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# Supabase Configuration (REQUIRED)
+SUPABASE_URL=your-supabase-url
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# JWT Secret (REQUIRED)
+JWT_SECRET=your-jwt-secret-key-here
+
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,https://estatoprop.com
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# OpenRouter AI Configuration (REQUIRED for AI features)
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-api-key-here
+APP_URL=https://estatoprop.com
+
+# AI Rate Limiting (Optional - defaults shown)
+AI_DAILY_LIMIT=50
+AI_COOLDOWN_MS=5000
+
+# Email Configuration (Optional)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+
+# SMS Configuration (Optional)
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=+1234567890
+
+# Payment Gateway (Optional)
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+

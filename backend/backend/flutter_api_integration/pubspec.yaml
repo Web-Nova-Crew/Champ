@@ -1,0 +1,38 @@
+name: estato_api_integration
+description: Complete API integration package for Estato Real Estate App
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # HTTP clients
+  dio: ^5.3.2
+  http: ^1.1.0
+  
+  # Local storage
+  shared_preferences: ^2.2.2
+  
+  # JSON serialization
+  json_annotation: ^4.8.1
+  
+  # Development dependencies
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  # Code generation
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.7
+  
+  # Linting
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

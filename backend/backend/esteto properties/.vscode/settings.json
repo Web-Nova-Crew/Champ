@@ -1,0 +1,61 @@
+{
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+  "postcss.validate": false,
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  "css.lint.validProperties": [],
+  "css.lint.duplicateProperties": "ignore",
+  "css.lint.emptyRules": "ignore",
+  "css.lint.importStatement": "ignore",
+  "css.lint.boxModel": "ignore",
+  "css.lint.universalSelector": "ignore",
+  "css.lint.zeroUnits": "ignore",
+  "css.lint.fontFaceProperties": "ignore",
+  "css.lint.hexColorLength": "ignore",
+  "css.lint.argumentsInColorFunction": "ignore",
+  "css.lint.unknownProperties": "ignore",
+  "css.lint.ieHack": "ignore",
+  "css.lint.unknownVendorSpecificProperties": "ignore",
+  "css.lint.propertyIgnoredDueToDisplay": "ignore",
+  "css.lint.important": "ignore",
+  "css.lint.float": "ignore",
+  "css.lint.idSelector": "ignore",
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["className\\s*=\\s*[\"'`]([^\"'`]*)[\"'`]", "([a-zA-Z0-9\\-:]+)"]
+  ],
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "globals.css": "tailwindcss"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "css.customData": [".vscode/css_custom_data.json"],
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  "css.completion.completePropertyWithSemicolon": false,
+  "css.completion.triggerPropertyValueCompletion": false,
+  "css.hover.documentation": false,
+  "css.hover.references": false,
+  "workbench.colorCustomizations": {},
+  "problems.decorations.enabled": false,
+  "[css]": {
+    "editor.suggest.insertMode": "replace",
+    "editor.suggest.filterGraceful": true,
+    "editor.suggest.localityBonus": true
+  }
+}
