@@ -6,50 +6,15 @@ const { supabase, supabaseAdmin } = require('../config/supabase');
 const getDbClient = () => supabaseAdmin || supabase;
 
 /**
- * @route   GET /api/admin/cities
- * @desc    Get all cities
+ * @route   GET /api/admin/categories
+ * @desc    Get all property categories
  * @access  Public
  */
-router.get('/cities', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const { is_active, search } = req.query;
-    
-    let query = supabase.from('cities').select('*');
-    
-    if (is_active !== undefined) query = query.eq('is_active', is_active === 'true');
-    if (search) query = query.ilike('name', `%${search}%`);
-    
-    const { data, error } = await query.order('display_order', { ascending: true });
-    
-    if (error) throw error;
-    
-    res.json({
-      success: true,
-      data: data || []
-    });
-  } catch (error) {
-    console.error('Get cities error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Server error'
-    });
-  }
-});
-
-/**
- * @route   GET /api/admin/cities/:id/areas
- * @desc    Get areas for a city
- * @access  Public
- */
-router.get('/cities/:id/areas', async (req, res) => {
-  try {
-    const { id } = req.params;
     const { is_active } = req.query;
     
-    let query = supabase
-      .from('areas')
-      .select('*')
-      .eq('city_id', id);
+    let query = supabase.from('property_categories').select('*');
     
     if (is_active !== undefined) query = query.eq('is_active', is_active === 'true');
     
@@ -62,7 +27,7 @@ router.get('/cities/:id/areas', async (req, res) => {
       data: data || []
     });
   } catch (error) {
-    console.error('Get areas error:', error);
+    console.error('Get categories error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
@@ -71,22 +36,21 @@ router.get('/cities/:id/areas', async (req, res) => {
 });
 
 /**
- * @route   POST /api/admin/cities
- * @desc    Create a new city
+ * @route   POST /api/admin/categories
+ * @desc    Create a new category
  * @access  Private (Admin only)
  */
-router.post('/cities', authenticate, requireAdmin, async (req, res) => {
+router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { name, state, country, latitude, longitude, is_active, display_order } = req.body;
+    const { name, slug, description, icon, is_active, display_order } = req.body;
     
     const { data, error } = await getDbClient()
-      .from('cities')
+      .from('property_categories')
       .insert({
         name,
-        state,
-        country: country || 'India',
-        latitude,
-        longitude,
+        slug,
+        description,
+        icon,
         is_active: is_active !== undefined ? is_active : true,
         display_order: display_order || 0
       })
@@ -98,10 +62,10 @@ router.post('/cities', authenticate, requireAdmin, async (req, res) => {
     res.json({
       success: true,
       data,
-      message: 'City created successfully'
+      message: 'Category created successfully'
     });
   } catch (error) {
-    console.error('Create city error:', error);
+    console.error('Create category error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
@@ -110,17 +74,17 @@ router.post('/cities', authenticate, requireAdmin, async (req, res) => {
 });
 
 /**
- * @route   PUT /api/admin/cities/:id
- * @desc    Update a city
+ * @route   PUT /api/admin/categories/:id
+ * @desc    Update a category
  * @access  Private (Admin only)
  */
-router.put('/cities/:id', authenticate, requireAdmin, async (req, res) => {
+router.put('/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
     
     const { data, error } = await getDbClient()
-      .from('cities')
+      .from('property_categories')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
@@ -131,10 +95,10 @@ router.put('/cities/:id', authenticate, requireAdmin, async (req, res) => {
     res.json({
       success: true,
       data,
-      message: 'City updated successfully'
+      message: 'Category updated successfully'
     });
   } catch (error) {
-    console.error('Update city error:', error);
+    console.error('Update category error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
@@ -143,16 +107,16 @@ router.put('/cities/:id', authenticate, requireAdmin, async (req, res) => {
 });
 
 /**
- * @route   DELETE /api/admin/cities/:id
- * @desc    Delete a city
+ * @route   DELETE /api/admin/categories/:id
+ * @desc    Delete a category
  * @access  Private (Admin only)
  */
-router.delete('/cities/:id', authenticate, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
     const { error } = await getDbClient()
-      .from('cities')
+      .from('property_categories')
       .delete()
       .eq('id', id);
     
@@ -160,10 +124,10 @@ router.delete('/cities/:id', authenticate, requireAdmin, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'City deleted successfully'
+      message: 'Category deleted successfully'
     });
   } catch (error) {
-    console.error('Delete city error:', error);
+    console.error('Delete category error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
@@ -172,22 +136,52 @@ router.delete('/cities/:id', authenticate, requireAdmin, async (req, res) => {
 });
 
 /**
- * @route   POST /api/admin/areas
- * @desc    Create a new area
+ * @route   GET /api/admin/amenities
+ * @desc    Get all amenities
+ * @access  Public
+ */
+router.get('/amenities', async (req, res) => {
+  try {
+    const { category, is_active } = req.query;
+    
+    let query = supabase.from('amenities').select('*');
+    
+    if (category) query = query.eq('category', category);
+    if (is_active !== undefined) query = query.eq('is_active', is_active === 'true');
+    
+    const { data, error } = await query.order('display_order', { ascending: true });
+    
+    if (error) throw error;
+    
+    res.json({
+      success: true,
+      data: data || []
+    });
+  } catch (error) {
+    console.error('Get amenities error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/admin/amenities
+ * @desc    Create a new amenity
  * @access  Private (Admin only)
  */
-router.post('/areas', authenticate, requireAdmin, async (req, res) => {
+router.post('/amenities', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { city_id, name, latitude, longitude, pincode, is_active, display_order } = req.body;
+    const { name, slug, icon, category, is_active, display_order } = req.body;
     
     const { data, error } = await getDbClient()
-      .from('areas')
+      .from('amenities')
       .insert({
-        city_id,
         name,
-        latitude,
-        longitude,
-        pincode,
+        slug,
+        icon,
+        category,
         is_active: is_active !== undefined ? is_active : true,
         display_order: display_order || 0
       })
@@ -199,10 +193,10 @@ router.post('/areas', authenticate, requireAdmin, async (req, res) => {
     res.json({
       success: true,
       data,
-      message: 'Area created successfully'
+      message: 'Amenity created successfully'
     });
   } catch (error) {
-    console.error('Create area error:', error);
+    console.error('Create amenity error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
@@ -211,17 +205,17 @@ router.post('/areas', authenticate, requireAdmin, async (req, res) => {
 });
 
 /**
- * @route   PUT /api/admin/areas/:id
- * @desc    Update an area
+ * @route   PUT /api/admin/amenities/:id
+ * @desc    Update an amenity
  * @access  Private (Admin only)
  */
-router.put('/areas/:id', authenticate, requireAdmin, async (req, res) => {
+router.put('/amenities/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
     
     const { data, error } = await getDbClient()
-      .from('areas')
+      .from('amenities')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
@@ -232,10 +226,10 @@ router.put('/areas/:id', authenticate, requireAdmin, async (req, res) => {
     res.json({
       success: true,
       data,
-      message: 'Area updated successfully'
+      message: 'Amenity updated successfully'
     });
   } catch (error) {
-    console.error('Update area error:', error);
+    console.error('Update amenity error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
@@ -244,16 +238,16 @@ router.put('/areas/:id', authenticate, requireAdmin, async (req, res) => {
 });
 
 /**
- * @route   DELETE /api/admin/areas/:id
- * @desc    Delete an area
+ * @route   DELETE /api/admin/amenities/:id
+ * @desc    Delete an amenity
  * @access  Private (Admin only)
  */
-router.delete('/areas/:id', authenticate, requireAdmin, async (req, res) => {
+router.delete('/amenities/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
     const { error } = await getDbClient()
-      .from('areas')
+      .from('amenities')
       .delete()
       .eq('id', id);
     
@@ -261,10 +255,10 @@ router.delete('/areas/:id', authenticate, requireAdmin, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Area deleted successfully'
+      message: 'Amenity deleted successfully'
     });
   } catch (error) {
-    console.error('Delete area error:', error);
+    console.error('Delete amenity error:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Server error'
