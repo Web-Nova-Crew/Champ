@@ -36,6 +36,8 @@ let chatRoutes, bookingRoutes, paymentRoutes, adminRoutes, notificationRoutes, s
 let adminEnquiriesRoutes, adminSubscriptionsRoutes, adminFaqsRoutes, adminBlacklistRoutes;
 let adminSupportRoutes, adminReviewsRoutes, adminRolesRoutes, adminLocationsRoutes;
 let adminTenantMatchingRoutes, adminAdsRoutes, adminSeoRoutes, adminLogsRoutes;
+let adminSettingsRoutes, adminBannersRoutes, adminMediaRoutes, adminPagesRoutes, adminBlogRoutes;
+let adminFeatureFlagsRoutes, adminRemoteConfigRoutes, adminAppVersionsRoutes, adminCategoriesRoutes, adminNotificationsRoutes, adminFeaturedRoutes;
 let cloudinaryRoutes;
 
 try {
@@ -63,6 +65,17 @@ try {
   adminAdsRoutes = require('./routes/admin-ads');
   adminSeoRoutes = require('./routes/admin-seo');
   adminLogsRoutes = require('./routes/admin-logs');
+  adminSettingsRoutes = require('./routes/admin-settings');
+  adminBannersRoutes = require('./routes/admin-banners');
+  adminMediaRoutes = require('./routes/admin-media');
+  adminPagesRoutes = require('./routes/admin-pages');
+  adminBlogRoutes = require('./routes/admin-blog');
+  adminFeatureFlagsRoutes = require('./routes/admin-feature-flags');
+  adminRemoteConfigRoutes = require('./routes/admin-remote-config');
+  adminAppVersionsRoutes = require('./routes/admin-app-versions');
+  adminCategoriesRoutes = require('./routes/admin-categories');
+  adminNotificationsRoutes = require('./routes/admin-notifications');
+  adminFeaturedRoutes = require('./routes/admin-featured');
   cloudinaryRoutes = require('./routes/cloudinary');
 } catch (error) {
   console.error('❌ Error loading routes:', error.message);
@@ -626,6 +639,17 @@ app.use('/api/admin/tenant-matching', adminTenantMatchingRoutes);
 app.use('/api/admin/ads', adminAdsRoutes);
 app.use('/api/admin/seo', adminSeoRoutes);
 app.use('/api/admin/logs', adminLogsRoutes);
+app.use('/api/admin/settings', adminSettingsRoutes);
+app.use('/api/admin/banners', adminBannersRoutes);
+app.use('/api/admin/media', adminMediaRoutes);
+app.use('/api/admin/pages', adminPagesRoutes);
+app.use('/api/admin/blog', adminBlogRoutes);
+app.use('/api/admin/feature-flags', adminFeatureFlagsRoutes);
+app.use('/api/admin/remote-config', adminRemoteConfigRoutes);
+app.use('/api/admin/app-versions', adminAppVersionsRoutes);
+app.use('/api/admin/categories', adminCategoriesRoutes);
+app.use('/api/admin/notification-templates', adminNotificationsRoutes);
+app.use('/api/admin/featured-properties', adminFeaturedRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
