@@ -273,12 +273,12 @@ router.post(
         .eq('id', req.userId);
       const userProfile = userProfiles && userProfiles.length > 0 ? userProfiles[0] : null;
 
-      // Upload images to Supabase Storage
+      // Upload images to Supabase Storage (keep using Supabase for images)
       const imageUrls = [];
       console.log('Files received:', req.files ? req.files.length : 0);
       
       if (req.files && req.files.length > 0) {
-        console.log(`Processing ${req.files.length} files for upload...`);
+        console.log(`Processing ${req.files.length} files for upload to Supabase...`);
         const storageClient = supabaseAdmin || supabase;
         
         for (const file of req.files) {
@@ -303,7 +303,7 @@ router.post(
             contentType = mimeMap[fileExt] || 'image/jpeg';
           }
 
-          console.log(`Uploading: ${fileName} (${contentType})`);
+          console.log(`Uploading to Supabase: ${fileName} (${contentType})`);
           
           const { data: uploadData, error: uploadError } = await storageClient.storage
             .from('property-images')
@@ -319,8 +319,30 @@ router.post(
               .from('property-images')
               .getPublicUrl(fileName);
             imageUrls.push(urlData.publicUrl);
-            console.log(`Uploaded successfully: ${urlData.publicUrl}`);
+            console.log(`Uploaded successfully to Supabase: ${urlData.publicUrl}`);
           }
+        }
+      }
+      
+      // Handle videos from Cloudinary (NEW FEATURE)
+      let videoUrls = [];
+      if (req.body.videoUrls) {
+        try {
+          videoUrls = JSON.parse(req.body.videoUrls);
+          console.log(`Using ${videoUrls.length} Cloudinary video URLs`);
+        } catch (e) {
+          console.error('Error parsing videoUrls:', e);
+        }
+      }
+      
+      // Handle documents from Cloudinary (NEW FEATURE - PDFs, brochures, layouts)
+      let documents = [];
+      if (req.body.documents) {
+        try {
+          documents = JSON.parse(req.body.documents);
+          console.log(`Using ${documents.length} Cloudinary document URLs`);
+        } catch (e) {
+          console.error('Error parsing documents:', e);
         }
       }
 
@@ -336,6 +358,8 @@ router.post(
         bedrooms: parseInt(req.body.bedrooms),
         bathrooms: parseInt(req.body.bathrooms),
         images: imageUrls,
+        videos: videoUrls,
+        documents: documents,
         owner_id: req.userId,
         owner_name: userProfile?.name || 'Unknown',
         owner_phone: req.body.ownerPhone || userProfile?.phone || '',
