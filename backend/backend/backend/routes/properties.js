@@ -5,6 +5,7 @@ const { authenticate, optionalAuth } = require('../middleware/auth');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const { supabase, supabaseAdmin } = require('../config/supabase');
+const sharp = require('sharp');
 
 // Fix multer reference in error handler
 const MulterError = multer.MulterError;
@@ -291,23 +292,43 @@ router.post(
             continue;
           }
           
-          const fileName = `properties/${uuidv4()}.${fileExt}`;
-          
+          // Convert HEIC/HEIF to JPEG for browser compatibility
+          let imageBuffer = file.buffer;
+          let outputExt = fileExt;
           let contentType = file.mimetype;
+          
+          if (fileExt === 'heic' || fileExt === 'heif') {
+            console.log(`Converting ${fileExt.toUpperCase()} to JPEG for browser compatibility...`);
+            try {
+              imageBuffer = await sharp(file.buffer)
+                .jpeg({ quality: 90 })
+                .toBuffer();
+              outputExt = 'jpg';
+              contentType = 'image/jpeg';
+              console.log(`Successfully converted ${fileExt.toUpperCase()} to JPEG`);
+            } catch (conversionError) {
+              console.error(`Failed to convert ${fileExt.toUpperCase()}:`, conversionError.message);
+              // Skip this file if conversion fails
+              continue;
+            }
+          }
+          
+          const fileName = `properties/${uuidv4()}.${outputExt}`;
+          
           if (!contentType.startsWith('image/')) {
             const mimeMap = {
               'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
               'png': 'image/png', 'gif': 'image/gif',
-              'webp': 'image/webp', 'heic': 'image/heic', 'heif': 'image/heif',
+              'webp': 'image/webp',
             };
-            contentType = mimeMap[fileExt] || 'image/jpeg';
+            contentType = mimeMap[outputExt] || 'image/jpeg';
           }
 
           console.log(`Uploading to Supabase: ${fileName} (${contentType})`);
           
           const { data: uploadData, error: uploadError } = await storageClient.storage
             .from('property-images')
-            .upload(fileName, file.buffer, {
+            .upload(fileName, imageBuffer, {
               contentType: contentType,
               upsert: false,
             });
